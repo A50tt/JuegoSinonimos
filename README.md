@@ -2,7 +2,7 @@
 
 Para empezar a jugar, ejecuta JuegoSinonimos.exe.
 
-Tristemente, a fecha de hoy 20/03/2025, veo que ejecutar el código desde un IDE está causando error en la biblioteca que utilicé en su día (HtmlAgilityPack) a causa de que las páginas fuente han añadido protección contra el web scraping. El .exe aún funciona (y no entiendo muy bien por qué...).
+Tristemente, a fecha de hoy 20/03/2025, veo que ejecutar el código desde un IDE está causando error en la biblioteca que utilicé en su día (HtmlAgilityPack) a causa de que las páginas fuente han añadido protección contra el web scraping. El .exe aún funciona (y algún día me tendré que mirar por qué...).
 
 Este test tiene música de fondo, ya que como fue un proyecto personal quería añadirle mi toque. Ahora me arrepiento de haberla dejado en formato .WAV, porque la música ocupa más de la mitad del peso de la aplicación... Esta música puede detenerse dentro de la aplicación.
 
