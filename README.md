@@ -1,9 +1,5 @@
 # Hola, querido betatester.
 
-Para empezar a jugar, ejecuta JuegoSinonimos.exe.
-
-# -------- REGLAS --------
-
 Al iniciar el juego, aparecerá una palabra en el título. El objetivo es introducir un sinónimo en el cuadro de texto Respuesta. Esta respuesta será dada por válida aunque varíen mayúsculas/minúsculas o falten/sobren tildes.
 
 Aparecerán todas las definiciones de esa palabra en el cuadro de debajo para dar ayuda.
