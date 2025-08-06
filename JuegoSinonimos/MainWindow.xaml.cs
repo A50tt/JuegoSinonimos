@@ -18,6 +18,7 @@ using HtmlAgilityPack;
 using ScrapySharp.Extensions;
 using System.Media;
 using System.Reflection;
+using ScrapySharp.Html.Parsing;
 
 
 namespace JuegoSinonimos
@@ -43,8 +44,6 @@ namespace JuegoSinonimos
             InitializeComponent();
             WordSelectorTextBox.Focus();
             RandomWord();
-            ChooseSong();
-            PlayMusic();
         }
 
         public void RandomWord()
@@ -68,12 +67,13 @@ namespace JuegoSinonimos
             HtmlWeb oWeb2 = new HtmlWeb(); //connection to Load (on HtmlDocument).
             HtmlDocument doc2 = oWeb2.Load(Url2); //URL a la página web fuente.
 
-            HtmlNode Node2 = doc2.DocumentNode.SelectSingleNode("//*[@id='article']//div[1]/h3");
+            HtmlNode Node2 = doc2.DocumentNode.SelectSingleNode("//*[@id='article']/div[@id='otherDicts']/div/h3");
             try
             {
                 if (askedWord == Node2.InnerText)
                 {
                     RetrieveSynonims(finalRandomWord);
+                    ShowDefinition(finalRandomWord);
                     CopyListToNoSpecial();
                 }
                 else
@@ -92,7 +92,7 @@ namespace JuegoSinonimos
             string rawUrl = "https://www.wordreference.com/sinonimos/";
             string primalWord = word.ToLower();
             string finalUrl = rawUrl + primalWord;
-            UrlConsoleOutput(finalUrl);            
+            UrlConsoleOutput(finalUrl);
 
             HtmlWeb oWeb = new HtmlWeb(); //connection to Load (on HtmlDocument).
             HtmlDocument doc = oWeb.Load(finalUrl); //URL a la página web fuente.
@@ -101,29 +101,25 @@ namespace JuegoSinonimos
             {
                 foreach (HtmlAgilityPack.HtmlNode Nodo in doc.DocumentNode.SelectNodes("//*[@id='article']//div[1]//ul//li")) //getting 'first row of synonims'. 
                 {
-                    if (!Nodo.InnerHtml.Contains("span"))
+                    string nodeString = Nodo.CssSelect("").First().InnerText;
+                    bool subDone = false;
+                    int lastComma = 0;
+                    while (subDone == false)
                     {
-                        string NodeString = Nodo.CssSelect("").First().InnerText;
-                        bool subDone = false;
-                        int lastComma = 0;
-                        while (subDone == false)
+                        if (((nodeString.IndexOf(",", lastComma, nodeString.Length - lastComma) - lastComma)) >= 0)
                         {
-                            if (((NodeString.IndexOf(",", lastComma, NodeString.Length - lastComma) - lastComma)) >= 0)
-                            {
-                                string retrievedWord = NodeString.Substring(lastComma, NodeString.IndexOf(",", lastComma, NodeString.Length - lastComma) - lastComma).ToLower();
-                                listSynonyms.Add(retrievedWord);
-                                lastComma = NodeString.IndexOf(",", lastComma) + 3;
-                            }
-                            else
-                            {
-                                string retrievedWord = NodeString.Substring(lastComma, NodeString.Length - lastComma).ToLower();
-                                listSynonyms.Add(retrievedWord);
-                                subDone = true;
-                            }
+                            string retrievedWord = nodeString.Substring(lastComma, nodeString.IndexOf(",", lastComma, nodeString.Length - lastComma) - lastComma).ToLower();
+                            listSynonyms.Add(retrievedWord);
+                            lastComma = nodeString.IndexOf(",", lastComma) + 3;
+                        }
+                        else
+                        {
+                            string retrievedWord = nodeString.Substring(lastComma, nodeString.Length - lastComma).ToLower();
+                            listSynonyms.Add(retrievedWord);
+                            subDone = true;
                         }
                     }
                 }
-                ShowDefinition(word);
             }
             catch (System.Exception e)
             {
@@ -133,119 +129,135 @@ namespace JuegoSinonimos
 
         public void ShowDefinition(string word)
         {
-            string rawUrl = "https://dle.rae.es/";
+            string rawUrl = "https://www.wordreference.com/definicion/";
             string primalWord = word.ToLower();
             string finalUrl = rawUrl + primalWord;
 
             HtmlWeb oWeb = new HtmlWeb(); //connection to Load (on HtmlDocument).
             HtmlDocument doc = oWeb.Load(finalUrl); //URL a la página web fuente.
 
-            foreach (HtmlAgilityPack.HtmlNode Nodo in doc.DocumentNode.SelectNodes("//*[@class='j']")) //getting 'first row of synonims'. 
+            int defNumber = 1;
+            foreach (HtmlNode nodo in doc.DocumentNode.SelectNodes("//*[@id='otherDicts']//li")) //getting 'definitions'. 
             {
-                string NodeString = Nodo.CssSelect("").First().InnerText.Substring(0,Nodo.InnerText.Length-1) + ".";
-                
+                string nodeString = defNumber.ToString() + ". ";
+                defNumber++;
+                nodeString += nodo.CssSelect("").First().InnerText;
+                /*
+                 * var childNodes = nodo.ChildNodes
+                    .Where(child => child.Name != "span")
+                    .Where(child => (child != null));
+                foreach (HtmlNode childNode in childNodes)
+                {
+                    nodeString += childNode.InnerText.Trim();
+                }
+                */
+                //Symbol ":" that appears in every definition.
+                if (nodeString.Contains(":"))
+                {
+                    nodeString = nodeString.Replace(":", ".");
+                }
                 //Capital letters "tilde"
-                if (NodeString.Contains("&#xC1;"))
+                if (nodeString.Contains("&#xC1;"))
                 {
-                    NodeString = NodeString.Replace("&#xC1;", "Á");
-                }                       
-                if (NodeString.Contains("&#xC9;"))
+                    nodeString = nodeString.Replace("&#xC1;", "Á");
+                }
+                if (nodeString.Contains("&#xC9;"))
                 {
-                    NodeString = NodeString.Replace("&#xC9;", "É");
-                }                
-                if (NodeString.Contains("&#xCD;"))
+                    nodeString = nodeString.Replace("&#xC9;", "É");
+                }
+                if (nodeString.Contains("&#xCD;"))
                 {
-                    NodeString = NodeString.Replace("&#xCD;", "Í");
-                }                
-                if (NodeString.Contains("&#xD3;"))
+                    nodeString = nodeString.Replace("&#xCD;", "Í");
+                }
+                if (nodeString.Contains("&#xD3;"))
                 {
-                    NodeString = NodeString.Replace("&#xD3;", "Ó");
-                }                
-                if (NodeString.Contains("&#xDA;"))
+                    nodeString = nodeString.Replace("&#xD3;", "Ó");
+                }
+                if (nodeString.Contains("&#xDA;"))
                 {
-                    NodeString = NodeString.Replace("&#xDA;", "Ú");
-                }                
-                
+                    nodeString = nodeString.Replace("&#xDA;", "Ú");
+                }
+
                 // Lowercase letters "tilde"
-                if (NodeString.Contains("&#xE1;"))
+                if (nodeString.Contains("&#xE1;"))
                 {
-                    NodeString = NodeString.Replace("&#xE1;", "á");
-                }                       
-                if (NodeString.Contains("&#xE9;"))
+                    nodeString = nodeString.Replace("&#xE1;", "á");
+                }
+                if (nodeString.Contains("&#xE9;"))
                 {
-                    NodeString = NodeString.Replace("&#xE9;", "é");
-                }                
-                if (NodeString.Contains("&#xED;"))
+                    nodeString = nodeString.Replace("&#xE9;", "é");
+                }
+                if (nodeString.Contains("&#xED;"))
                 {
-                    NodeString = NodeString.Replace("&#xED;", "í");
-                }                
-                if (NodeString.Contains("&#xF3;"))
+                    nodeString = nodeString.Replace("&#xED;", "í");
+                }
+                if (nodeString.Contains("&#xF3;"))
                 {
-                    NodeString = NodeString.Replace("&#xF3;", "ó");
-                }                
-                if (NodeString.Contains("&#xFA;"))
+                    nodeString = nodeString.Replace("&#xF3;", "ó");
+                }
+                if (nodeString.Contains("&#xFA;"))
                 {
-                    NodeString = NodeString.Replace("&#xFA;", "ú");
+                    nodeString = nodeString.Replace("&#xFA;", "ú");
                 }
 
                 //Diéresis
-                if (NodeString.Contains("&#xCF;"))
+                if (nodeString.Contains("&#xCF;"))
                 {
-                    NodeString = NodeString.Replace("&#xCF;", "Ï");
-                }                
-                if (NodeString.Contains("&#xEF;"))
+                    nodeString = nodeString.Replace("&#xCF;", "Ï");
+                }
+                if (nodeString.Contains("&#xEF;"))
                 {
-                    NodeString = NodeString.Replace("&#xEF;", "ï");
-                }     
-                if (NodeString.Contains("&#xD6;"))
+                    nodeString = nodeString.Replace("&#xEF;", "ï");
+                }
+                if (nodeString.Contains("&#xD6;"))
                 {
-                    NodeString = NodeString.Replace("&#xD6;", "Ö");
-                }                
-                if (NodeString.Contains("&#xF6;"))
+                    nodeString = nodeString.Replace("&#xD6;", "Ö");
+                }
+                if (nodeString.Contains("&#xF6;"))
                 {
-                    NodeString = NodeString.Replace("&#xF6;", "ö");
-                }                
-                if (NodeString.Contains("&#xDC;"))
+                    nodeString = nodeString.Replace("&#xF6;", "ö");
+                }
+                if (nodeString.Contains("&#xDC;"))
                 {
-                    NodeString = NodeString.Replace("&#xDC;", "Ü");
-                }                
-                if (NodeString.Contains("&#xFC;"))
+                    nodeString = nodeString.Replace("&#xDC;", "Ü");
+                }
+                if (nodeString.Contains("&#xFC;"))
                 {
-                    NodeString = NodeString.Replace("&#xFC;", "ü");
+                    nodeString = nodeString.Replace("&#xFC;", "ü");
                 }
 
                 //Other special characters
-                if (NodeString.Contains("&#xD1;"))
+                if (nodeString.Contains("&#xD1;"))
                 {
-                    NodeString = NodeString.Replace("&#xD1;", "Ñ");
-                }                
-                if (NodeString.Contains("&#xF1;"))
-                {
-                    NodeString = NodeString.Replace("&#xF1;", "ñ");
-                }                
-                if (NodeString.Contains("&#x2016;"))
-                {
-                    NodeString = NodeString.Replace("&#x2016;", "");
-                }                
-                if (NodeString.Contains("&#xBF;"))
-                {
-                    NodeString = NodeString.Replace("&#xBF;", "");
-                }                
-                if (NodeString.Contains("&#x2014;"))
-                {
-                    NodeString = NodeString.Replace("&#x2014;", "");
-                }                
-                if (NodeString.Contains("&#x221A;"))
-                {
-                    NodeString = NodeString.Replace("&#x221A;", "");
+                    nodeString = nodeString.Replace("&#xD1;", "Ñ");
                 }
-                DefinitionConsoleText.Text += NodeString + "\n";
-            }            
+                if (nodeString.Contains("&#xF1;"))
+                {
+                    nodeString = nodeString.Replace("&#xF1;", "ñ");
+                }
+                if (nodeString.Contains("&#x2016;"))
+                {
+                    nodeString = nodeString.Replace("&#x2016;", "");
+                }
+                if (nodeString.Contains("&#xBF;"))
+                {
+                    nodeString = nodeString.Replace("&#xBF;", "");
+                }
+                if (nodeString.Contains("&#x2014;"))
+                {
+                    nodeString = nodeString.Replace("&#x2014;", "");
+                }
+                if (nodeString.Contains("&#x221A;"))
+                {
+                    nodeString = nodeString.Replace("&#x221A;", "");
+                }
+                DefinitionConsoleText.Text += nodeString + "\n";
+            }
         }
-        public void CheckAnswer(string answer)        
+        public void CheckAnswer(string answer)
         {
             SynonymConsoleOutput(listSynonyms);
-            string simpleAnswer = answer.Replace('á', 'a').Replace('à', 'a').Replace('é', 'e').Replace('è', 'e').Replace('í', 'i').Replace('ì', 'i').Replace('ó', 'o').Replace('ò', 'o').Replace('ú', 'u').Replace('ù', 'u').Replace('ñ', 'n').Replace('ä', 'a').Replace('ë', 'e').Replace('ï', 'i').Replace('ö', 'o').Replace('ü', 'u').Replace("ñ","n");
+            string simpleAnswer = answer.Replace('á', 'a').Replace('à', 'a').Replace('é', 'e').Replace('è', 'e').Replace('í', 'i').Replace('ì', 'i').Replace('ó', 'o').Replace('ò', 'o').Replace('ú', 'u').Replace('ù', 'u').Replace('ñ', 'n').Replace('ä', 'a').Replace('ë', 'e').Replace('ï', 'i').Replace('ö', 'o').Replace('ü', 'u').Replace("ñ", "n");
 
             //pedigüeñería
             if (listSynonyms.Contains(answer))
@@ -275,7 +287,7 @@ namespace JuegoSinonimos
             RandomWord();
         }
 
-        public void CopyListToNoSpecial ()
+        public void CopyListToNoSpecial()
         {
             string noSpecialWord;
 
@@ -284,25 +296,25 @@ namespace JuegoSinonimos
             {
                 noSpecialWord = word;
                 if (noSpecialWord.Contains("á"))
-                    {
-                        noSpecialWord = noSpecialWord.Replace("á", "a");
-                    }                
+                {
+                    noSpecialWord = noSpecialWord.Replace("á", "a");
+                }
                 if (noSpecialWord.Contains("é"))
-                    {
-                        noSpecialWord = noSpecialWord.Replace("é", "e");
-                    }
+                {
+                    noSpecialWord = noSpecialWord.Replace("é", "e");
+                }
                 if (noSpecialWord.Contains("í"))
-                    {
+                {
                     noSpecialWord = noSpecialWord.Replace("í", "i");
-                    }
+                }
                 if (noSpecialWord.Contains("ó"))
-                    {
+                {
                     noSpecialWord = noSpecialWord.Replace("ó", "o");
-                    }
+                }
                 if (noSpecialWord.Contains("ú"))
-                    {
+                {
                     noSpecialWord = noSpecialWord.Replace("ú", "u");
-                    }
+                }
                 ///////////////
                 if (noSpecialWord.Contains("ñ"))
                 {
@@ -355,111 +367,6 @@ namespace JuegoSinonimos
             checkQuestionSound_mediaPlayer.Play();
         }
 
-        public void ChooseSong()
-        {
-            int songChoosing;
-            if (songAlreadyStarted == false)
-            {
-                Random random = new Random();
-                songChoosing = random.Next(1, 7);
-                switch (songChoosing)
-                {
-                    case 1:
-                        songName = "ApocalipsisAquarius.wav";
-                        backgroundMusic_mediaPlayer.Volume = 0.08;
-                        break;
-                    case 2:
-                        songName = "CareeningIntoDanger.wav";
-                        backgroundMusic_mediaPlayer.Volume = 0.2;
-                        break;
-                    case 3:
-                        songName = "Cleigne.wav";
-                        backgroundMusic_mediaPlayer.Volume = 0.1;
-                        break;
-                    case 4:
-                        songName = "StandYourGround.wav";
-                        backgroundMusic_mediaPlayer.Volume = 0.08;
-                        break;
-                    case 5:
-                        songName = "VeiledInBlack.wav";
-                        backgroundMusic_mediaPlayer.Volume = 0.04;
-                        break;
-                    case 6:
-                        songName = "Hellfire.wav";
-                        backgroundMusic_mediaPlayer.Volume = 0.17;
-                        break;
-                    default:
-                        songName = "Cleigne.wav";
-                        backgroundMusic_mediaPlayer.Volume = 0.1;
-                        break;            
-                }
-                songAlreadyStarted = true;
-            }
-            else
-            {
-                int numSong = Convert.ToInt32(Convert.ToString(nowPlaying).Substring(0, 1));
-                if (numSong == 1)
-                {
-                    songName = "CareeningIntoDanger.wav";
-                    backgroundMusic_mediaPlayer.Volume = 0.2;
-                    songChoosing = 2;
-                }
-                else if (numSong == 2)
-                {
-                    songName = "Cleigne.wav";
-                    backgroundMusic_mediaPlayer.Volume = 0.1;
-                    songChoosing = 3;
-                }
-                else if (numSong == 3)
-                {
-                    songName = "StandYourGround.wav";
-                    backgroundMusic_mediaPlayer.Volume = 0.08;
-                    songChoosing = 4;
-                }
-                else if (numSong == 4)
-                {
-                    songName = "VeiledInBlack.wav";
-                    backgroundMusic_mediaPlayer.Volume = 0.04;
-                    songChoosing = 5;
-                }
-                else if (numSong == 5)
-                {
-                    songName = "Hellfire.wav";
-                    backgroundMusic_mediaPlayer.Volume = 0.17;
-                    songChoosing = 6;
-                }
-                else if (numSong == 6)
-                {
-                    songName = "ApocalipsisAquarius.wav";
-                    backgroundMusic_mediaPlayer.Volume = 0.08;
-                    songChoosing = 1;
-                }
-                else
-                {
-                    songChoosing = 1;
-                }
-            }
-            nowPlaying = Convert.ToString(songChoosing) + ". " + songName.Substring(0, songName.Length - 4);
-            SongNameLabel.Content = nowPlaying;
-        }
-
-        public void PlayMusic()
-        {
-            string executableFilePath = Assembly.GetExecutingAssembly().Location; //Ruta absoluta del .exe [A]
-            string solutionFilePath = executableFilePath.Substring(0,executableFilePath.IndexOf("bin",0,executableFilePath.Length - 1)); //Ruta arreglada del padre de "bin"
-            string musicDirectoryPath = solutionFilePath + "/Music"; //Ruta absoluta de la carpeta del .exe [B]
-            string audioFilePath = IO.Path.Combine(musicDirectoryPath, songName); //Ruta absoluta de la música a reproducir (combinando B y songName)
-
-            backgroundMusic_mediaPlayer.Open(new Uri(audioFilePath));      //(new Uri(@"..\..\Music\" + songName + ""))
-            backgroundMusic_mediaPlayer.MediaEnded += delegate { ChooseSong(); PlayMusic(); };
-            backgroundMusic_mediaPlayer.Play();
-        }
-
-        public void StopMusic()
-        {
-            backgroundMusic_mediaPlayer.Stop();
-        }
-
         public void UrlConsoleOutput(string Url)
         {
             UrlConsoleText.Text = Url;
@@ -498,20 +405,6 @@ namespace JuegoSinonimos
             RandomWord();
         }
 
-        private void MusicButton_Click(object sender, RoutedEventArgs e)
-        {
-            
-            ChooseSong();
-            StopMusic();
-            PlayMusic();
-        }
-
-        private void StopMusicButton_Click_1(object sender, RoutedEventArgs e)
-        {
-            StopMusic();
-            SongNameLabel.Content = "";
-        }
-
         private void ShowSynonymsButton_MouseEnter(object sender, MouseEventArgs e)
         {
             SynonymConsoleOutput(listSynonyms);
@@ -520,23 +413,6 @@ namespace JuegoSinonimos
         private void ShowSynonymsButton_MouseLeave(object sender, MouseEventArgs e)
         {
             SynonymsConsoleText.Text = "";
-        }
-
-        private void DefinitionButton_Click(object sender, RoutedEventArgs e)
-        {
-            /*
-            if (definitionShown == false)
-            {
-                ShowDefinition(askedWord);
-                definitionShown = true;
-            }     
-            
-            else
-            {
-                DefinitionConsoleText.Text = "";
-                definitionShown = false;
-            }
-            */
         }
     }
 }
