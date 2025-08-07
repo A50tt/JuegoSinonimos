@@ -142,15 +142,6 @@ namespace JuegoSinonimos
                 string nodeString = defNumber.ToString() + ". ";
                 defNumber++;
                 nodeString += nodo.CssSelect("").First().InnerText;
-                /*
-                 * var childNodes = nodo.ChildNodes
-                    .Where(child => child.Name != "span")
-                    .Where(child => (child != null));
-                foreach (HtmlNode childNode in childNodes)
-                {
-                    nodeString += childNode.InnerText.Trim();
-                }
-                */
                 //Symbol ":" that appears in every definition.
                 if (nodeString.Contains(":"))
                 {
