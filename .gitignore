@@ -1,0 +1,63 @@
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Bb]uilds/
+*.dll
+*.exe
+*.app
+
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider files
+.idea/
+*.sln.iml
+
+# User-specific files
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Backup & temporary files
+*~
+*.swp
+*.tmp
+*.bak
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Publish results
+publish/
+*.publish/
+
+# Test results
+TestResults/
+*.TestResults
+
+# Local history for Visual Studio
+.localhistory/
+
+# JetBrains Rider
+.idea/
+
+# MonoDevelop
+*.userprefs
+
+# VS Code
+.vscode/
